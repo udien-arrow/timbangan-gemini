@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timbangan Digital Real-Time</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f2f5;
+            color: #333;
+        }
+        .container {
+            text-align: center;
+            padding: 40px;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #1a73e8;
+            margin-bottom: 10px;
+        }
+        #weight-display {
+            font-size: 5rem;
+            font-weight: bold;
+            color: #202124;
+            min-width: 300px;
+            padding: 20px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            background-color: #fafafa;
+        }
+        #status {
+            margin-top: 20px;
+            font-size: 1rem;
+            color: #666;
+        }
+        .connected { color: #34a853; }
+        .disconnected { color: #ea4335; }
+
+        #capture-btn {
+            margin-top: 20px;
+            padding: 12px 24px;
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: white;
+            background-color: #1a73e8;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.1s;
+        }
+        #capture-btn:hover {
+            background-color: #155ab6;
+        }
+        #capture-btn:active {
+            transform: scale(0.98);
+        }
+        #capture-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .captured-section {
+            margin-top: 30px;
+            width: 100%;
+            text-align: left;
+        }
+        #captured-list {
+            list-style-type: decimal;
+            padding-left: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            border-radius: 5px;
+            margin-top: 10px;
+            padding: 10px;
+        }
+        #captured-list li {
+            padding: 5px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        #captured-list li:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Timbangan Digital</h1>
+        <div id="weight-display">Menunggu data...</div>
+        <div id="status">Status: <span class="disconnected">Terputus</span></div>
+        <button id="capture-btn">Tangkap Berat</button>
+
+        <div class="captured-section">
+            <h3>Data Tertangkap:</h3>
+            <ul id="captured-list">
+                <!-- Data yang ditangkap akan muncul di sini -->
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const weightDisplay = document.getElementById('weight-display');
+        const statusElement = document.getElementById('status').querySelector('span');
+        const captureBtn = document.getElementById('capture-btn');
+        const capturedList = document.getElementById('captured-list');
+
+        let lastKnownWeight = null; // Variabel untuk menyimpan berat terakhir
+
+        // Nonaktifkan tombol pada awalnya
+        captureBtn.disabled = true;
+
+        function connectWebSocket() {
+            // Menghubungkan ke server WebSocket yang kita buat di server.js
+            const socket = new WebSocket('ws://localhost:8080');
+
+            socket.onopen = function(event) {
+                console.log('Terhubung ke server WebSocket.');
+                statusElement.textContent = 'Terhubung';
+                statusElement.className = 'connected';
+                captureBtn.disabled = false; // Aktifkan tombol saat terhubung
+            };
+
+            socket.onmessage = function(event) {
+                // event.data berisi data yang dikirim dari server (berat timbangan)
+                const weightData = event.data;
+                console.log('Data diterima:', weightData);
+
+                // Hanya perbarui jika data tidak kosong
+                if (weightData) {
+                    weightDisplay.textContent = weightData;
+                    lastKnownWeight = weightData; // Simpan data terakhir yang valid
+                }
+            };
+
+            socket.onclose = function(event) {
+                console.log('Koneksi WebSocket terputus. Mencoba menghubungkan kembali...');
+                statusElement.textContent = 'Terputus. Mencoba lagi...';
+                statusElement.className = 'disconnected';
+                captureBtn.disabled = true; // Nonaktifkan tombol saat terputus
+                lastKnownWeight = null;
+                // Coba hubungkan kembali setelah 3 detik
+                setTimeout(connectWebSocket, 3000);
+            };
+
+            socket.onerror = function(error) {
+                console.error('WebSocket Error:', error);
+                statusElement.textContent = 'Error Koneksi';
+                statusElement.className = 'disconnected';
+                captureBtn.disabled = true; // Nonaktifkan tombol saat error
+            };
+        }
+
+        // Event listener untuk tombol "Tangkap Berat"
+        captureBtn.addEventListener('click', () => {
+            if (lastKnownWeight) {
+                const listItem = document.createElement('li');
+                const timestamp = new Date().toLocaleTimeString('id-ID');
+                listItem.innerHTML = `${lastKnownWeight} <span>(ditangkap pada ${timestamp})</span>`;
+                // Tambahkan item baru di paling atas daftar
+                capturedList.prepend(listItem);
+            } else {
+                alert('Belum ada data berat yang valid untuk ditangkap.');
+            }
+        });
+
+        // Mulai koneksi saat halaman dimuat
+        connectWebSocket();
+    </script>
+
+</body>
+</html>
