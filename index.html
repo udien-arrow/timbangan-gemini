@@ -435,6 +435,7 @@
 
                 setAppStatus(result.message, 'green');
                 if (method === 'PUT' && result.transactionId) {
+                    console.log('DEBUG: Transaksi selesai. Menerima ID dari server:', result.transactionId);
                     // Transaksi selesai, siapkan tombol cetak
                     dom.saveBtn.disabled = true;
                     dom.printBtn.dataset.id = result.transactionId;

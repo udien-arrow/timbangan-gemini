@@ -54,6 +54,7 @@
             // 1. Ambil ID transaksi dari URL (contoh: cetak.html?id=123)
             const params = new URLSearchParams(window.location.search);
             const transactionId = params.get('id');
+            console.log('DEBUG: Halaman cetak mencoba memuat ID dari URL:', transactionId);
 
             if (!transactionId) {
                 document.body.innerHTML = '<h1>Error: ID Transaksi tidak ditemukan.</h1>';
@@ -62,7 +63,7 @@
 
             try {
                 // 2. Minta data lengkap transaksi ini dari server
-                const response = await fetch(`/api/transactions/${transactionId}`);
+                const response = await fetch(`http://${window.location.hostname}:8080/api/transactions/${transactionId}`);
                 if (!response.ok) {
                     // Coba baca pesan error dari server jika ada, jika tidak, tampilkan status HTTP
                     const errorData = await response.json().catch(() => null);

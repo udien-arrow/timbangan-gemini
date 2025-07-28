@@ -168,10 +168,17 @@ app.get('/api/transactions/pending/:plateNumber', async (req, res) => {
 
 // Endpoint untuk mengambil satu transaksi berdasarkan ID
 app.get('/api/transactions/:id', async (req, res) => {
-    const { id } = req.params;
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) {
+        return res.status(400).json({ message: 'ID Transaksi tidak valid.' });
+    }
+
     try {
+        console.log(`[DEBUG] Mencari transaksi di database dengan ID: ${id}`);
         const query = 'SELECT * FROM transactions WHERE id = ?';
         const [rows] = await dbPool.query(query, [id]);
+        console.log(`[DEBUG] Hasil query database:`, rows);
+
         if (rows.length > 0) {
             res.json(rows[0]);
         } else {
