@@ -258,6 +258,7 @@
             <div id="weight-display">0 g</div>
             <div id="status">Status: <span class="disconnected">Terputus</span></div>
             <hr style="width:100%; margin: 20px 0; border-color: var(--border-color);">
+            <button id="logout-btn" class="btn btn-danger" style="width: 100%; margin-bottom: 10px;">Logout</button>
             <a href="master.html" class="btn btn-secondary" style="text-decoration: none; text-align: center; margin-bottom: 10px; display: block;">Master Data</a>
             <button id="toggle-settings-btn" class="btn btn-secondary">Pengaturan Koneksi</button>
             <div class="settings-section" id="settings-section" style="display: none; width: 100%; margin-top: 15px; border-top: 1px solid var(--border-color); padding-top: 15px;">
@@ -440,6 +441,7 @@
             capture2Btn: document.getElementById('capture-weight-2-btn'),
             saveBtn: document.getElementById('save-transaction-btn'),
             resetBtn: document.getElementById('reset-form-btn'),
+            logoutBtn: document.getElementById('logout-btn'),
             historyBody: document.getElementById('history-body'),
             appStatus: document.getElementById('app-status'),
             searchPlate: document.getElementById('search-plate'),
@@ -903,6 +905,19 @@
         dom.resetBtn.addEventListener('click', resetForm);
         dom.toggleSettingsBtn.addEventListener('click', () => {
             dom.settingsSection.style.display = dom.settingsSection.style.display === 'block' ? 'none' : 'block';
+        });
+
+        dom.logoutBtn.addEventListener('click', async () => {
+            try {
+                const response = await fetch(`http://${window.location.hostname}:8080/api/logout`, { method: 'POST' });
+                if (response.ok) {
+                    window.location.href = '/login.html';
+                } else {
+                    alert('Gagal logout.');
+                }
+            } catch (error) {
+                alert('Error saat logout: ' + error.message);
+            }
         });
 
         dom.saveSettingsBtn.addEventListener('click', saveSerialSettings);

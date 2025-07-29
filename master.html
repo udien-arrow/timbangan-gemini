@@ -176,7 +176,10 @@
     <div class="container">
         <div class="header">
             <h1>Master Data</h1>
-            <a href="index.html" class="btn btn-secondary">Kembali ke Penimbangan</a>
+            <div style="display: flex; gap: 10px; margin-left: auto;">
+                <a href="index.html" class="btn btn-secondary">Kembali ke Penimbangan</a>
+                <button id="logout-btn" class="btn btn-danger">Logout</button>
+            </div>
         </div>
 
         <div id="status-message"></div>
@@ -497,6 +500,19 @@
                 showStatus(error.message, 'error');
             }
         }
+
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            try {
+                const response = await fetch(`${API_BASE_URL}/logout`, { method: 'POST' });
+                if (response.ok) {
+                    window.location.href = '/login.html';
+                } else {
+                    alert('Gagal logout.');
+                }
+            } catch (error) {
+                alert('Error saat logout: ' + error.message);
+            }
+        });
 
         // --- Initial Load ---
         function initialize() {

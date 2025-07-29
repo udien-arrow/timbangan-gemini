@@ -6,6 +6,7 @@ const http = require('http');
 const mysql = require('mysql2/promise');
 const path = require('path');
 const cors = require('cors');
+const session = require('express-session');
 
 // --- Konfigurasi ---
 const WEB_SERVER_PORT = 8080;
@@ -24,11 +25,19 @@ let currentStatus = { status: 'disconnected', message: 'Belum ada koneksi.' };
 
 // Inisialisasi Express App dan HTTP Server
 const app = express();
+
+// --- Middleware ---
 app.use(cors()); // Mengizinkan Cross-Origin Resource Sharing
 app.use(express.json()); // Middleware untuk parsing body JSON dari request
 
-// Sajikan file frontend (index.html dan lainnya) dari direktori saat ini
-app.use(express.static(__dirname));
+// Session Middleware
+app.use(session({
+    secret: 'timbangan-rahasia-yang-sangat-panjang-dan-unik', // Ganti dengan string acak yang panjang
+    resave: false,
+    saveUninitialized: false, // Tidak menyimpan sesi untuk pengguna yang belum login
+    cookie: { httpOnly: true, maxAge: 24 * 60 * 60 * 1000 } // Sesi berlaku selama 24 jam
+}));
+
 const server = http.createServer(app);
 
 // Inisialisasi WebSocket Server dan menempelkannya ke HTTP server
@@ -168,7 +177,70 @@ async function initializeSerialConnection() {
     }
 }
 
-// === API Endpoints ===
+// === Rute Publik (Tidak Perlu Login) ===
+
+// Sajikan halaman login
+app.get('/login.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'login.html'));
+});
+
+// Endpoint untuk proses login
+app.post('/api/login', async (req, res) => {
+    const { username, password } = req.body;
+    if (!username || !password) {
+        return res.status(400).json({ message: 'Username dan password harus diisi.' });
+    }
+    try {
+        const [rows] = await dbPool.query('SELECT id, password FROM users WHERE username = ?', [username]);
+        if (rows.length === 0) {
+            return res.status(401).json({ message: 'Username atau password salah.' });
+        }
+        const user = rows[0];
+        // PENTING: Di aplikasi production, gunakan bcrypt.compare(password, user.password)
+        if (password === user.password) {
+            req.session.userId = user.id;
+            req.session.username = username;
+            res.json({ message: 'Login berhasil.' });
+        } else {
+            res.status(401).json({ message: 'Username atau password salah.' });
+        }
+    } catch (error) {
+        console.error('Login error:', error);
+        res.status(500).json({ message: 'Terjadi kesalahan pada server.' });
+    }
+});
+
+// Endpoint untuk proses logout
+app.post('/api/logout', (req, res) => {
+    req.session.destroy(err => {
+        if (err) {
+            return res.status(500).json({ message: 'Gagal logout.' });
+        }
+        res.clearCookie('connect.sid'); // Nama cookie default dari express-session
+        res.json({ message: 'Logout berhasil.' });
+    });
+});
+
+
+// === Middleware untuk Proteksi Rute ===
+// Semua rute di bawah ini sekarang memerlukan login
+app.use((req, res, next) => {
+    // WebSocket connections don't have sessions, so we skip this check for them.
+    // The initial HTTP upgrade request for WebSocket is handled by the server before this middleware.
+    if (req.ws) {
+        return next();
+    }
+    if (req.session && req.session.userId) {
+        return next(); // Pengguna sudah login, lanjutkan
+    }
+    // Jika belum login, alihkan ke halaman login
+    res.redirect('/login.html');
+});
+
+// === Rute Terproteksi ===
+
+// Sajikan file-file statis (index.html, master.html, dll)
+app.use(express.static(__dirname));
 
 // Endpoint untuk mencari transaksi pending berdasarkan plat nomor untuk hari ini
 app.get('/api/transactions/pending/:plateNumber', async (req, res) => {
@@ -528,6 +600,11 @@ app.delete('/api/items/:id', async (req, res) => {
         console.error('API Error - Gagal menghapus barang:', error);
         res.status(500).json({ message: 'Gagal menghapus data dari database.' });
     }
+});
+
+// Rute utama, alihkan ke halaman penimbangan jika sudah login
+app.get('/', (req, res) => {
+    res.redirect('/index.html');
 });
 
 // Jalankan server
