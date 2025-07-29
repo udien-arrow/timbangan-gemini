@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Master Data</title>
+    <style>
+        :root {
+            --primary-color: #0056b3;
+            --secondary-color: #495057;
+            --background-color: #f4f7f9;
+            --surface-color: #ffffff;
+            --border-color: #dee2e6;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            background-color: var(--background-color);
+            color: var(--secondary-color);
+            padding: 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: var(--surface-color);
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        h1, h2 {
+            color: var(--primary-color);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        .master-section {
+            margin-bottom: 40px;
+        }
+        .table-container {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        th {
+            background-color: #f8f9fa;
+            position: sticky;
+            top: 0;
+        }
+        .btn {
+            padding: 10px 15px;
+            font-size: 1rem;
+            font-weight: 500;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            color: white;
+            text-decoration: none;
+        }
+        .btn-primary { background-color: var(--primary-color); }
+        .btn-primary:hover { background-color: #004494; }
+        .btn-secondary { background-color: var(--secondary-color); }
+        .btn-secondary:hover { background-color: #3e444a; }
+        .btn-warning { background-color: #ffc107; color: #212529; }
+        .btn-warning:hover { background-color: #e0a800; }
+        .btn-danger { background-color: var(--danger-color); }
+        .btn-danger:hover { background-color: #c82333; }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: var(--surface-color);
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            width: 90%;
+            max-width: 500px;
+            animation: fadeIn 0.3s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .close-btn {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close-btn:hover, .close-btn:focus {
+            color: black;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 1rem;
+            font-family: inherit;
+            box-sizing: border-box;
+            resize: vertical;
+        }
+        .action-cell {
+            display: flex;
+            gap: 8px;
+        }
+        .action-cell .btn {
+            padding: 5px 10px;
+        }
+        .modal-footer {
+            text-align: right;
+            margin-top: 20px;
+        }
+        #status-message {
+            height: 1.2em;
+            margin-top: 15px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1>Master Data</h1>
+            <a href="index.html" class="btn btn-secondary">Kembali ke Penimbangan</a>
+        </div>
+
+        <div id="status-message"></div>
+
+        <!-- Master Vendor Section -->
+        <div class="master-section">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h2>Master Vendor</h2>
+                <button id="add-vendor-btn" class="btn btn-primary">Tambah Vendor Baru</button>
+            </div>
+            <div class="table-container">
+                <table id="vendor-table">
+                    <thead>
+                        <tr>
+                            <th>Kode Vendor</th>
+                            <th>Nama Vendor</th>
+                            <th>Alamat</th>
+                            <th>No. Telp</th>
+                            <th style="width: 120px;">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="vendor-table-body">
+                        <!-- Data vendor dimuat di sini -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Master Barang Section -->
+        <div class="master-section">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h2>Master Barang</h2>
+                <button id="add-item-btn" class="btn btn-primary">Tambah Barang Baru</button>
+            </div>
+            <div class="table-container">
+                <table id="item-table">
+                    <thead>
+                        <tr>
+                            <th>Kode Barang</th>
+                            <th>Nama Barang</th>
+                            <th>Satuan</th>
+                            <th style="width: 120px;">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="item-table-body">
+                        <!-- Data barang dimuat di sini -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vendor Modal -->
+    <div id="vendor-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="vendor-modal-title">Tambah Vendor Baru</h2>
+                <span class="close-btn" data-modal="vendor-modal">&times;</span>
+            </div>
+            <form id="vendor-form">
+                <input type="hidden" id="vendor_id">
+                <div class="form-group">
+                    <label for="vendor_name">Nama Vendor</label>
+                    <input type="text" id="vendor_name" required>
+                </div>
+                <div class="form-group">
+                    <label for="vendor_address">Alamat</label>
+                    <textarea id="vendor_address" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="vendor_phone">No. Telepon</label>
+                    <input type="tel" id="vendor_phone">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary close-btn" data-modal="vendor-modal">Batal</button>
+                    <button type="submit" class="btn btn-primary">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Item Modal -->
+    <div id="item-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="item-modal-title">Tambah Barang Baru</h2>
+                <span class="close-btn" data-modal="item-modal">&times;</span>
+            </div>
+            <form id="item-form">
+                <input type="hidden" id="item_id">
+                <div class="form-group">
+                    <label for="item_name">Nama Barang</label>
+                    <input type="text" id="item_name" required>
+                </div>
+                <div class="form-group">
+                    <label for="item_unit">Satuan (e.g., KG, Karung, Unit)</label>
+                    <input type="text" id="item_unit">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary close-btn" data-modal="item-modal">Batal</button>
+                    <button type="submit" class="btn btn-primary">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = `http://${window.location.hostname}:8080/api`;
+        const statusMessageEl = document.getElementById('status-message');
+
+        // --- Modal Handling ---
+        const vendorModal = document.getElementById('vendor-modal');
+        const itemModal = document.getElementById('item-modal');
+
+        function openModal(modal, title = null, isEdit = false) {
+            const form = modal.querySelector('form');
+            if (!isEdit) {
+                form.reset();
+                form.querySelector('input[type="hidden"]').value = '';
+            }
+            if (title) {
+                modal.querySelector('.modal-header h2').textContent = title;
+            }
+            modal.style.display = 'flex';
+        }
+
+        function closeModal(modal) {
+            modal.style.display = 'none';
+            modal.querySelector('form').reset();
+            modal.querySelector('input[type="hidden"]').value = '';
+        }
+
+        document.getElementById('add-vendor-btn').addEventListener('click', () => openModal(vendorModal, 'Tambah Vendor Baru'));
+        document.getElementById('add-item-btn').addEventListener('click', () => openModal(itemModal, 'Tambah Barang Baru'));
+
+        document.querySelectorAll('.close-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const modalId = btn.getAttribute('data-modal');
+                closeModal(document.getElementById(modalId));
+            });
+        });
+
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                closeModal(event.target);
+            }
+        }
+
+        // --- Status Message ---
+        function showStatus(message, type = 'success') {
+            statusMessageEl.textContent = message;
+            statusMessageEl.style.color = type === 'success' ? 'var(--success-color)' : 'var(--danger-color)';
+            setTimeout(() => {
+                statusMessageEl.textContent = '';
+            }, 5000);
+        }
+
+        // --- Data Loading ---
+        async function loadVendors() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/vendors`);
+                if (!response.ok) throw new Error('Gagal memuat data vendor.');
+                const vendors = await response.json();
+                const tableBody = document.getElementById('vendor-table-body');
+                tableBody.innerHTML = '';
+                if (vendors.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Belum ada data vendor.</td></tr>';
+                } else {
+                    vendors.forEach(vendor => {
+                        const row = tableBody.insertRow();
+                        row.innerHTML = `
+                            <td>${vendor.vendor_code}</td>
+                            <td>${vendor.vendor_name}</td>
+                            <td>${vendor.address || ''}</td>
+                            <td>${vendor.phone || ''}</td>
+                            <td class="action-cell">
+                                <button class="btn btn-warning edit-vendor-btn" data-id="${vendor.id}" data-name="${vendor.vendor_name}" data-address="${vendor.address || ''}" data-phone="${vendor.phone || ''}">Edit</button>
+                                <button class="btn btn-danger delete-vendor-btn" data-id="${vendor.id}" data-name="${vendor.vendor_name}">Hapus</button>
+                            </td>
+                        `;
+                    });
+                }
+            } catch (error) {
+                showStatus(error.message, 'error');
+            }
+        }
+
+        async function loadItems() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/items`);
+                if (!response.ok) throw new Error('Gagal memuat data barang.');
+                const items = await response.json();
+                const tableBody = document.getElementById('item-table-body');
+                tableBody.innerHTML = '';
+                 if (items.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Belum ada data barang.</td></tr>';
+                } else {
+                    items.forEach(item => {
+                        const row = tableBody.insertRow();
+                        row.innerHTML = `
+                            <td>${item.item_code}</td>
+                            <td>${item.item_name}</td>
+                            <td>${item.unit || ''}</td>
+                            <td class="action-cell">
+                                <button class="btn btn-warning edit-item-btn" data-id="${item.id}" data-name="${item.item_name}" data-unit="${item.unit || ''}">Edit</button>
+                                <button class="btn btn-danger delete-item-btn" data-id="${item.id}" data-name="${item.item_name}">Hapus</button>
+                            </td>
+                        `;
+                    });
+                }
+            } catch (error) {
+                showStatus(error.message, 'error');
+            }
+        }
+
+        // --- Data Saving (Create & Update) ---
+        document.getElementById('vendor-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('vendor_id').value;
+            const data = {
+                vendor_name: document.getElementById('vendor_name').value,
+                address: document.getElementById('vendor_address').value,
+                phone: document.getElementById('vendor_phone').value
+            };
+            const method = id ? 'PUT' : 'POST';
+            const endpoint = id ? `/vendors/${id}` : '/vendors';
+            await saveData(endpoint, method, data, vendorModal, loadVendors);
+        });
+
+        document.getElementById('item-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('item_id').value;
+            const data = {
+                item_name: document.getElementById('item_name').value,
+                unit: document.getElementById('item_unit').value
+            };
+            const method = id ? 'PUT' : 'POST';
+            const endpoint = id ? `/items/${id}` : '/items';
+            await saveData(endpoint, method, data, itemModal, loadItems);
+        });
+
+        async function saveData(endpoint, method, data, modal, reloadFunction) {
+            try {
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                if (!response.ok) {
+                    throw new Error(result.message || 'Gagal menyimpan data.');
+                }
+                showStatus(result.message, 'success');
+                closeModal(modal);
+                await reloadFunction();
+            } catch (error) {
+                showStatus(error.message, 'error');
+            }
+        }
+
+        // --- Data Editing ---
+        document.getElementById('vendor-table-body').addEventListener('click', (e) => {
+            if (e.target.classList.contains('edit-vendor-btn')) {
+                const btn = e.target;
+                document.getElementById('vendor_id').value = btn.dataset.id;
+                document.getElementById('vendor_name').value = btn.dataset.name;
+                document.getElementById('vendor_address').value = btn.dataset.address;
+                document.getElementById('vendor_phone').value = btn.dataset.phone;
+                openModal(vendorModal, 'Edit Vendor', true);
+            }
+        });
+
+        document.getElementById('item-table-body').addEventListener('click', (e) => {
+            if (e.target.classList.contains('edit-item-btn')) {
+                const btn = e.target;
+                document.getElementById('item_id').value = btn.dataset.id;
+                document.getElementById('item_name').value = btn.dataset.name;
+                document.getElementById('item_unit').value = btn.dataset.unit;
+                openModal(itemModal, 'Edit Barang', true);
+            }
+        });
+
+        // --- Data Deletion ---
+        document.getElementById('vendor-table-body').addEventListener('click', async (e) => {
+            if (e.target.classList.contains('delete-vendor-btn')) {
+                const btn = e.target;
+                const id = btn.dataset.id;
+                const name = btn.dataset.name;
+                if (confirm(`Apakah Anda yakin ingin menghapus vendor "${name}"?`)) {
+                    await deleteData(`/vendors/${id}`, loadVendors);
+                }
+            }
+        });
+
+        document.getElementById('item-table-body').addEventListener('click', async (e) => {
+            if (e.target.classList.contains('delete-item-btn')) {
+                const btn = e.target;
+                const id = btn.dataset.id;
+                const name = btn.dataset.name;
+                if (confirm(`Apakah Anda yakin ingin menghapus barang "${name}"?`)) {
+                    await deleteData(`/items/${id}`, loadItems);
+                }
+            }
+        });
+
+        async function deleteData(endpoint, reloadFunction) {
+            try {
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                    method: 'DELETE'
+                });
+                const result = await response.json();
+                if (!response.ok) {
+                    throw new Error(result.message || 'Gagal menghapus data.');
+                }
+                showStatus(result.message, 'success');
+                await reloadFunction();
+            } catch (error) {
+                showStatus(error.message, 'error');
+            }
+        }
+
+        // --- Initial Load ---
+        function initialize() {
+            loadVendors();
+            loadItems();
+        }
+
+        initialize();
+    </script>
+</body>
+</html>

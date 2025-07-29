@@ -96,6 +96,23 @@
             border-radius: 4px;
             font-size: 1rem;
         }
+
+        .weigh-group input {
+            background-color: #e9ecef;
+            flex-grow: 1;
+            font-weight: bold;
+        }
+
+        .input-with-button {
+            display: flex;
+        }
+        .input-with-button input {
+            flex-grow: 1;
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+            cursor: pointer;
+            background-color: #e9ecef;
+        }
         
         .form-group input:focus {
             outline: none;
@@ -109,11 +126,6 @@
             gap: 10px;
         }
 
-        .weigh-group input {
-            background-color: #e9ecef;
-            font-weight: bold;
-        }
-
         .btn {
             padding: 10px 15px;
             font-size: 1rem;
@@ -125,12 +137,15 @@
             color: white;
         }
 
+        .input-with-button .btn {
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+        }
+
         .btn-primary { background-color: var(--primary-color); }
         .btn-primary:hover { background-color: #004494; }
         .btn-success { background-color: var(--success-color); }
         .btn-success:hover { background-color: #218838; }
-        .btn-info { background-color: #17a2b8; }
-        .btn-info:hover { background-color: #138496; }
         .btn-secondary { background-color: var(--secondary-color); }
         .btn-secondary:hover { background-color: #3e444a; }
         .btn:disabled { background-color: #ccc; cursor: not-allowed; }
@@ -168,6 +183,71 @@
             height: 1.2em;
             font-weight: 500;
         }
+        .search-form {
+            display: flex;
+            gap: 15px;
+            align-items: flex-end;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .search-form .form-group {
+            flex: 1;
+        }
+        .search-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: var(--surface-color);
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            width: 90%;
+            max-width: 600px;
+            animation: fadeIn 0.3s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .modal-header .close-btn {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .modal-body .table-container {
+            max-height: 40vh;
+            overflow-y: auto;
+        }
+        .modal-body table tbody tr:hover {
+            background-color: #f0f2f5;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -177,9 +257,10 @@
             <h2>Timbangan Real-Time</h2>
             <div id="weight-display">0 g</div>
             <div id="status">Status: <span class="disconnected">Terputus</span></div>
-            <hr style="width:100%; margin: 20px 0;">
+            <hr style="width:100%; margin: 20px 0; border-color: var(--border-color);">
+            <a href="master.html" class="btn btn-secondary" style="text-decoration: none; text-align: center; margin-bottom: 10px; display: block;">Master Data</a>
             <button id="toggle-settings-btn" class="btn btn-secondary">Pengaturan Koneksi</button>
-            <div class="settings-section" id="settings-section">
+            <div class="settings-section" id="settings-section" style="display: none; width: 100%; margin-top: 15px; border-top: 1px solid var(--border-color); padding-top: 15px;">
                 <h3>Pengaturan</h3>
                 <div class="form-group">
                     <label for="port-path-input">Port Path</label>
@@ -187,7 +268,16 @@
                 </div>
                 <div class="form-group">
                     <label for="baud-rate-select">Baud Rate</label>
-                    <select id="baud-rate-select"><option value="9600">9600</option></select>
+                    <select id="baud-rate-select">
+                        <option value="1200">1200</option>
+                        <option value="2400">2400</option>
+                        <option value="4800">4800</option>
+                        <option value="9600">9600</option>
+                        <option value="19200">19200</option>
+                        <option value="38400">38400</option>
+                        <option value="57600">57600</option>
+                        <option value="115200">115200</option>
+                    </select>
                 </div>
                 <div class="form-group">
                     <label for="stop-bits-select">Stop Bits</label>
@@ -195,7 +285,11 @@
                 </div>
                 <div class="form-group">
                     <label for="parity-select">Parity</label>
-                    <select id="parity-select"><option value="none">None</option></select>
+                    <select id="parity-select">
+                        <option value="none">None</option>
+                        <option value="even">Even</option>
+                        <option value="odd">Odd</option>
+                    </select>
                 </div>
                 <button id="save-settings-btn" class="btn btn-primary" style="width:100%;">Simpan</button>
                 <div id="settings-status"></div>
@@ -215,11 +309,17 @@
                 </div>
                 <div class="form-group">
                     <label for="vendor_name">Nama Vendor</label>
-                    <input type="text" id="vendor_name" name="vendor_name">
+                    <div class="input-with-button">
+                        <input type="text" id="vendor_name" name="vendor_name" readonly placeholder="Klik untuk memilih vendor">
+                        <button id="select-vendor-btn" class="btn btn-secondary" type="button">Pilih</button>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label for="item_name">Nama Barang</label>
-                    <input type="text" id="item_name" name="item_name">
+                    <div class="input-with-button">
+                        <input type="text" id="item_name" name="item_name" readonly placeholder="Klik untuk memilih barang">
+                        <button id="select-item-btn" class="btn btn-secondary" type="button">Pilih</button>
+                    </div>
                 </div>
             </div>
 
@@ -257,12 +357,29 @@
             <div class="action-buttons">
                 <button id="save-transaction-btn" class="btn btn-success">Simpan Transaksi</button>
                 <button id="reset-form-btn" class="btn btn-secondary">Form Baru</button>
-                <button id="print-btn" class="btn btn-info" style="display: none;">Cetak</button>
             </div>
             <div id="app-status"></div>
 
             <div class="history-section">
-                <h3>Riwayat Transaksi Terakhir</h3>
+                <h3>Riwayat Transaksi</h3>
+                <div class="search-form">
+                    <div class="form-group">
+                        <label for="search-plate">Cari Plat Nomor</label>
+                        <input type="text" id="search-plate" placeholder="e.g., B 1234 ABC">
+                    </div>
+                    <div class="form-group">
+                        <label for="search-start-date">Dari Tanggal</label>
+                        <input type="date" id="search-start-date">
+                    </div>
+                    <div class="form-group">
+                        <label for="search-end-date">Sampai Tanggal</label>
+                        <input type="date" id="search-end-date">
+                    </div>
+                    <div class="search-actions">
+                        <button id="search-btn" class="btn btn-primary">Cari</button>
+                        <button id="search-reset-btn" class="btn btn-secondary">Reset</button>
+                    </div>
+                </div>
                 <table class="history-table">
                     <thead>
                         <tr>
@@ -281,6 +398,27 @@
         </div>
     </div>
 
+    <!-- Selection Modal -->
+    <div id="selection-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="selection-modal-title">Pilih Data</h2>
+                <span class="close-btn">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <input type="text" id="modal-search-input" placeholder="Cari data..." style="margin-bottom: 15px;">
+                </div>
+                <div class="table-container">
+                    <table class="history-table" id="selection-modal-table">
+                        <thead></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         // --- Elemen DOM ---
         const dom = {
@@ -291,6 +429,8 @@
             plateNumber: document.getElementById('plate_number'),
             vendorName: document.getElementById('vendor_name'),
             itemName: document.getElementById('item_name'),
+            selectVendorBtn: document.getElementById('select-vendor-btn'),
+            selectItemBtn: document.getElementById('select-item-btn'),
             weight1: document.getElementById('weight_1'),
             weight2: document.getElementById('weight_2'),
             grossWeight: document.getElementById('gross_weight'),
@@ -300,12 +440,28 @@
             capture2Btn: document.getElementById('capture-weight-2-btn'),
             saveBtn: document.getElementById('save-transaction-btn'),
             resetBtn: document.getElementById('reset-form-btn'),
-            printBtn: document.getElementById('print-btn'),
             historyBody: document.getElementById('history-body'),
             appStatus: document.getElementById('app-status'),
+            searchPlate: document.getElementById('search-plate'),
+            searchStartDate: document.getElementById('search-start-date'),
+            searchEndDate: document.getElementById('search-end-date'),
+            searchBtn: document.getElementById('search-btn'),
+            searchResetBtn: document.getElementById('search-reset-btn'),
             // Pengaturan
             toggleSettingsBtn: document.getElementById('toggle-settings-btn'),
             settingsSection: document.getElementById('settings-section'),
+            portPathSelect: document.getElementById('port-path-select'),
+            baudRateSelect: document.getElementById('baud-rate-select'),
+            stopBitsSelect: document.getElementById('stop-bits-select'),
+            paritySelect: document.getElementById('parity-select'),
+            saveSettingsBtn: document.getElementById('save-settings-btn'),
+            settingsStatus: document.getElementById('settings-status'),
+            // Modal
+            selectionModal: document.getElementById('selection-modal'),
+            selectionModalTitle: document.getElementById('selection-modal-title'),
+            modalSearchInput: document.getElementById('modal-search-input'),
+            selectionModalTable: document.getElementById('selection-modal-table'),
+            modalCloseBtn: document.querySelector('#selection-modal .close-btn'),
         };
 
         dom.transactionId.type = 'hidden';
@@ -342,9 +498,7 @@
             ];
             fields.forEach(field => dom[field].value = '');
             // Re-enable all fields and buttons
-            dom.saveBtn.disabled = false;
-            dom.printBtn.style.display = 'none';
-            [dom.doNumber, dom.plateNumber, dom.vendorName, dom.itemName, dom.capture1Btn].forEach(el => el.disabled = false);
+            [dom.doNumber, dom.plateNumber, dom.selectVendorBtn, dom.selectItemBtn, dom.capture1Btn].forEach(el => el.disabled = false);
             setAppStatus('');
         }
 
@@ -378,7 +532,7 @@
             dom.weight1.value = `${tx.weight_1} g`;
 
             // Lock the fields that are already filled
-            [dom.doNumber, dom.plateNumber, dom.vendorName, dom.itemName, dom.capture1Btn].forEach(el => el.disabled = true);
+            [dom.doNumber, dom.plateNumber, dom.selectVendorBtn, dom.selectItemBtn, dom.capture1Btn].forEach(el => el.disabled = true);
         }
 
         async function saveTransaction() {
@@ -401,22 +555,23 @@
                 await sendRequest(`/api/transactions/${transactionId}`, 'PUT', updateData);
             } else {
                 // This is Timbang 1 (Create)
+                const w1 = parseInt(dom.weight1.value) || 0;
+                if (w1 === 0) {
+                    alert('Silakan lakukan Timbang 1 terlebih dahulu.');
+                    return;
+                }
                 const createData = {
                     do_number: dom.doNumber.value.trim(),
                     plate_number: dom.plateNumber.value.trim(),
                     vendor_name: dom.vendorName.value.trim(),
                     item_name: dom.itemName.value.trim(),
-                    weight_1: parseInt(dom.weight1.value) || 0
+                    weight_1: w1
                 };
                  for (const key in createData) {
-                    if (!createData[key] && key !== 'weight_1') { // weight_1 can be 0
+                    if (!createData[key]) {
                         alert(`Data "${key.replace('_', ' ')}" harus diisi.`);
                         return;
                     }
-                }
-                if (!dom.weight1.value) {
-                    alert('Silakan lakukan Timbang 1 terlebih dahulu.');
-                    return;
                 }
                 await sendRequest('/api/transactions', 'POST', createData);
             }
@@ -433,32 +588,29 @@
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.message || 'Gagal menyimpan.');
 
-                setAppStatus(result.message, 'green');
-                if (method === 'PUT' && result.transactionId) {
-                    console.log('DEBUG: Transaksi selesai. Menerima ID dari server:', result.transactionId);
-                    // Transaksi selesai, siapkan tombol cetak
-                    dom.saveBtn.disabled = true;
-                    dom.printBtn.dataset.id = result.transactionId;
-                    dom.printBtn.style.display = 'inline-block';
-                } else {
-                    // Ini adalah Timbang 1, reset form
-                    resetForm();
+                setAppStatus(result.message, 'var(--success-color)');
+                // Jika ini adalah update (menyelesaikan timbang 2), buka jendela cetak
+                if (method === 'PUT' && result.id) {
+                    window.open(`cetak.html?id=${result.id}`, '_blank');
                 }
-                loadHistory(); // Selalu muat ulang riwayat
+                resetForm();
+                await loadHistory();
             } catch (error) {
                 setAppStatus(`Error: ${error.message}`, 'red');
             }
         }
 
-        async function loadHistory() {
+        async function loadHistory(searchParams = {}) {
             try {
-                const response = await fetch(`http://${window.location.hostname}:8080/api/transactions`); // This now gets completed transactions
+                const query = new URLSearchParams(searchParams).toString();
+                const response = await fetch(`http://${window.location.hostname}:8080/api/transactions?${query}`);
                 if (!response.ok) throw new Error('Gagal memuat riwayat.');
                 const history = await response.json();
 
                 dom.historyBody.innerHTML = '';
                 if (history.length === 0) {
-                    dom.historyBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Belum ada riwayat.</td></tr>';
+                    const message = Object.keys(searchParams).length > 0 ? 'Data tidak ditemukan.' : 'Belum ada riwayat.';
+                    dom.historyBody.innerHTML = `<tr><td colspan="5" style="text-align:center;">${message}</td></tr>`;
                 } else {
                     history.forEach(item => {
                         const row = dom.historyBody.insertRow();
@@ -483,36 +635,240 @@
             dom.appStatus.style.color = color;
         }
 
+        function setSettingsStatus(message, color = 'black') {
+            dom.settingsStatus.textContent = message;
+            dom.settingsStatus.style.color = color;
+            if (message) {
+                // Clear status after a while
+                setTimeout(() => {
+                    if (dom.settingsStatus.textContent === message) {
+                        setSettingsStatus('');
+                    }
+                }, 5000);
+            }
+        }
+
+        // --- MODAL SELECTION ---
+        let currentSelectionType = null; // 'vendor' or 'item'
+
+        function closeModal() {
+            dom.selectionModal.style.display = 'none';
+            dom.modalSearchInput.value = '';
+            // Clear table to prevent showing old data briefly on next open
+            dom.selectionModalTable.querySelector('thead').innerHTML = '';
+            dom.selectionModalTable.querySelector('tbody').innerHTML = '';
+        }
+
+        async function openSelectionModal(type) {
+            currentSelectionType = type;
+            const isVendor = type === 'vendor';
+            dom.selectionModalTitle.textContent = isVendor ? 'Pilih Vendor' : 'Pilih Barang';
+            
+            const endpoint = isVendor ? '/api/vendors' : '/api/items';
+            const headers = isVendor 
+                ? ['Kode Vendor', 'Nama Vendor', 'Alamat'] 
+                : ['Kode Barang', 'Nama Barang', 'Satuan'];
+
+            try {
+                setAppStatus('Memuat data master...', 'var(--warning-color)');
+                const response = await fetch(`http://${window.location.hostname}:8080${endpoint}`);
+                if (!response.ok) throw new Error(`Gagal memuat data ${type}.`);
+                const data = await response.json();
+                setAppStatus('');
+
+                // Populate table headers
+                const thead = dom.selectionModalTable.querySelector('thead');
+                thead.innerHTML = `<tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>`;
+
+                // Populate table body
+                const tbody = dom.selectionModalTable.querySelector('tbody');
+                tbody.innerHTML = '';
+                if (data.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="${headers.length}" style="text-align:center;">Data tidak ditemukan.</td></tr>`;
+                } else {
+                    data.forEach(item => {
+                        const row = tbody.insertRow();
+                        row.dataset.value = isVendor ? item.vendor_name : item.item_name;
+                        
+                        if (isVendor) {
+                            row.innerHTML = `<td>${item.vendor_code}</td><td>${item.vendor_name}</td><td>${item.address || ''}</td>`;
+                        } else {
+                            row.innerHTML = `<td>${item.item_code}</td><td>${item.item_name}</td><td>${item.unit || ''}</td>`;
+                        }
+                    });
+                }
+                
+                dom.selectionModal.style.display = 'flex';
+                dom.modalSearchInput.focus();
+
+            } catch (error) {
+                setAppStatus(`Error: ${error.message}`, 'var(--danger-color)');
+            }
+        }
+
+        function handleModalSearch() {
+            const filter = dom.modalSearchInput.value.toUpperCase();
+            const rows = dom.selectionModalTable.querySelectorAll('tbody tr');
+            rows.forEach(row => {
+                const cells = row.getElementsByTagName('td');
+                let match = false;
+                for (let i = 0; i < cells.length; i++) {
+                    if (cells[i] && cells[i].textContent.toUpperCase().indexOf(filter) > -1) {
+                        match = true;
+                        break;
+                    }
+                }
+                row.style.display = match ? '' : 'none';
+            });
+        }
+
+        function handleModalSelection(event) {
+            const row = event.target.closest('tr');
+            if (!row || !row.dataset.value) return;
+
+            if (currentSelectionType === 'vendor') {
+                dom.vendorName.value = row.dataset.value;
+            } else if (currentSelectionType === 'item') {
+                dom.itemName.value = row.dataset.value;
+            }
+            closeModal();
+        }
+
+        // --- PENGATURAN KONEKSI SERIAL ---
+        async function loadSerialSettings() {
+            try {
+                const response = await fetch(`http://${window.location.hostname}:8080/api/serial/settings`);
+                if (!response.ok) throw new Error('Gagal memuat pengaturan serial.');
+                const settings = await response.json();
+
+                dom.portPathSelect.innerHTML = '';
+                const availablePortPaths = new Set();
+
+                // 1. Populate ports dropdown with currently available ports
+                if (settings.ports && settings.ports.length > 0) {
+                    settings.ports.forEach(port => {
+                        availablePortPaths.add(port.path);
+                        const option = document.createElement('option');
+                        option.value = port.path;
+                        option.textContent = `${port.path} (${port.manufacturer || 'N/A'})`;
+                        dom.portPathSelect.appendChild(option);
+                    });
+                }
+
+                // 2. Set current saved settings from the database
+                if (settings.current) {
+                    const savedPath = settings.current.path;
+
+                    // If the saved port is not currently available, add it to the list
+                    // so the user can see what was saved, even if it's disconnected.
+                    if (savedPath && !availablePortPaths.has(savedPath)) {
+                        const option = document.createElement('option');
+                        option.value = savedPath;
+                        option.textContent = `${savedPath} (Tersimpan, tidak terdeteksi)`;
+                        // Prepend to make it obvious it's a special case
+                        dom.portPathSelect.prepend(option);
+                    }
+
+                    dom.portPathSelect.value = savedPath || '';
+                    dom.baudRateSelect.value = settings.current.baudRate || '9600';
+                    dom.stopBitsSelect.value = settings.current.stopBits || '1';
+                    dom.paritySelect.value = settings.current.parity || 'none';
+                }
+
+                // 3. Add a placeholder if no ports are available or saved
+                if (dom.portPathSelect.options.length === 0) {
+                    dom.portPathSelect.innerHTML = '<option value="">Tidak ada port tersedia</option>';
+                }
+            } catch (error) {
+                console.error('Error loading serial settings:', error);
+                setSettingsStatus(`Error: ${error.message}`, 'var(--danger-color)');
+            }
+        }
+
+        async function saveSerialSettings() {
+            const settings = {
+                path: dom.portPathSelect.value,
+                baudRate: parseInt(dom.baudRateSelect.value, 10),
+                stopBits: parseInt(dom.stopBitsSelect.value, 10),
+                parity: dom.paritySelect.value,
+            };
+
+            if (!settings.path) {
+                setSettingsStatus('Silakan pilih Port Path.', 'var(--danger-color)');
+                return;
+            }
+
+            setSettingsStatus('Menyimpan dan mencoba menghubungkan...', 'var(--warning-color)');
+
+            try {
+                const response = await fetch(`http://${window.location.hostname}:8080/api/serial/settings`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(settings),
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.message || 'Gagal menyimpan pengaturan.');
+                
+                setSettingsStatus(result.message, 'var(--success-color)');
+                // The server will now attempt to connect and send status via WebSocket
+
+            } catch (error) {
+                console.error('Error saving serial settings:', error);
+                setSettingsStatus(`Error: ${error.message}`, 'var(--danger-color)');
+            }
+        }
+
         // --- KONEKSI WEBSOCKET ---
         function connectWebSocket() {
-            const socket = new WebSocket(`ws://${window.location.hostname}:8080`);
+            const socket = new WebSocket(`ws://${window.location.hostname}:8080/ws`);
 
             socket.onopen = () => {
-                dom.statusSpan.textContent = 'Terhubung';
-                dom.statusSpan.className = 'connected';
-                [dom.capture1Btn, dom.capture2Btn].forEach(btn => btn.disabled = false);
+                console.log('Koneksi WebSocket ke server aplikasi berhasil.');
+                // Status timbangan akan dikirim oleh server
             };
 
             socket.onmessage = (event) => {
-                const weightData = event.data;
-                if (weightData) {
-                    dom.weightDisplay.textContent = weightData;
-                    lastKnownWeight = parseInt(weightData) || 0;
+                try {
+                    const message = JSON.parse(event.data);
+                    switch (message.type) {
+                        case 'status':
+                            updateConnectionStatus(message.payload.status, message.payload.message);
+                            break;
+                        case 'data':
+                            const weightData = message.payload;
+                            if (weightData) {
+                                dom.weightDisplay.textContent = weightData;
+                                lastKnownWeight = parseInt(weightData) || 0;
+                            }
+                            break;
+                    }
+                } catch (e) {
+                    console.error("Gagal mem-parsing pesan WebSocket:", event.data);
                 }
             };
 
             socket.onclose = () => {
-                dom.statusSpan.textContent = 'Terputus. Mencoba lagi...';
-                dom.statusSpan.className = 'disconnected';
-                [dom.capture1Btn, dom.capture2Btn].forEach(btn => btn.disabled = true);
+                updateConnectionStatus('disconnected', 'Koneksi ke server aplikasi terputus. Mencoba lagi...');
                 setTimeout(connectWebSocket, 3000);
             };
 
             socket.onerror = (error) => {
                 console.error('WebSocket Error:', error);
-                dom.statusSpan.textContent = 'Error Koneksi';
-                dom.statusSpan.className = 'disconnected';
+                updateConnectionStatus('error', 'Error koneksi ke server aplikasi.');
             };
+        }
+
+        function updateConnectionStatus(status, message) {
+            dom.statusSpan.textContent = message || status;
+            if (status === 'connected') {
+                dom.statusSpan.className = 'connected';
+                [dom.capture1Btn, dom.capture2Btn].forEach(btn => btn.disabled = false);
+            } else {
+                dom.statusSpan.className = 'disconnected';
+                [dom.capture1Btn, dom.capture2Btn].forEach(btn => btn.disabled = true);
+                dom.weightDisplay.textContent = '0 g';
+                lastKnownWeight = 0;
+            }
         }
 
         // --- EVENT LISTENERS ---
@@ -526,9 +882,19 @@
             updateCalculations();
         });
 
-        dom.printBtn.addEventListener('click', () => {
-            const txId = dom.printBtn.dataset.id;
-            if (txId) window.open(`cetak.html?id=${txId}`, '_blank');
+        dom.searchBtn.addEventListener('click', () => {
+            const params = {};
+            if (dom.searchPlate.value) params.plateNumber = dom.searchPlate.value.trim();
+            if (dom.searchStartDate.value) params.startDate = dom.searchStartDate.value;
+            if (dom.searchEndDate.value) params.endDate = dom.searchEndDate.value;
+            loadHistory(params);
+        });
+
+        dom.searchResetBtn.addEventListener('click', () => {
+            dom.searchPlate.value = '';
+            dom.searchStartDate.value = '';
+            dom.searchEndDate.value = '';
+            loadHistory();
         });
 
         dom.plateNumber.addEventListener('blur', findPendingTransaction);
@@ -539,10 +905,26 @@
             dom.settingsSection.style.display = dom.settingsSection.style.display === 'block' ? 'none' : 'block';
         });
 
+        dom.saveSettingsBtn.addEventListener('click', saveSerialSettings);
+
+        // Modal Listeners
+        dom.selectVendorBtn.addEventListener('click', () => openSelectionModal('vendor'));
+        dom.selectItemBtn.addEventListener('click', () => openSelectionModal('item'));
+
+        dom.modalCloseBtn.addEventListener('click', closeModal);
+        dom.selectionModal.addEventListener('click', (e) => {
+            if (e.target === dom.selectionModal) {
+                closeModal();
+            }
+        });
+        dom.selectionModalTable.querySelector('tbody').addEventListener('click', handleModalSelection);
+        dom.modalSearchInput.addEventListener('keyup', handleModalSearch);
+
         // --- INISIALISASI ---
         function initializeApp() {
             [dom.capture1Btn, dom.capture2Btn].forEach(btn => btn.disabled = true);
-            // Kode untuk memuat pengaturan koneksi bisa ditambahkan di sini jika diperlukan
+            
+            loadSerialSettings();
             connectWebSocket();
             loadHistory();
         }
