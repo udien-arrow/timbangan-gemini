@@ -264,8 +264,8 @@
             <div class="settings-section" id="settings-section" style="display: none; width: 100%; margin-top: 15px; border-top: 1px solid var(--border-color); padding-top: 15px;">
                 <h3>Pengaturan</h3>
                 <div class="form-group">
-                    <label for="port-path-input">Port Path</label>
-                    <input type="text" id="port-path-input">
+                    <label for="port-path-select">Port Path</label>
+                    <select id="port-path-select"></select>
                 </div>
                 <div class="form-group">
                     <label for="baud-rate-select">Baud Rate</label>
@@ -511,13 +511,21 @@
             setAppStatus('Mencari transaksi pending...', 'orange');
             try {
                 const response = await fetch(`http://${window.location.hostname}:8080/api/transactions/pending/${plateNumber}`);
+
                 if (response.status === 404) {
                     setAppStatus('Tidak ada data Timbang 1. Siap untuk transaksi baru.', 'blue');
                     return;
                 }
-                if (!response.ok) throw new Error('Gagal mencari data.');
-                
+
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    window.location.href = `http://${window.location.hostname}:8080/login.html`;
+                    return;
+                }
+
                 const pendingTx = await response.json();
+                if (!response.ok) throw new Error(pendingTx.message || 'Gagal mencari data.');
+
                 populateFormWithPendingData(pendingTx);
                 setAppStatus('Data Timbang 1 ditemukan. Siap untuk Timbang 2.', 'green');
             } catch (error) {
@@ -587,6 +595,13 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data),
                 });
+
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    window.location.href = `http://${window.location.hostname}:8080/login.html`;
+                    return;
+                }
+
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.message || 'Gagal menyimpan.');
 
@@ -606,25 +621,37 @@
             try {
                 const query = new URLSearchParams(searchParams).toString();
                 const response = await fetch(`http://${window.location.hostname}:8080/api/transactions?${query}`);
-                if (!response.ok) throw new Error('Gagal memuat riwayat.');
+
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    window.location.href = `http://${window.location.hostname}:8080/login.html`;
+                    return;
+                }
+
                 const history = await response.json();
+                if (!response.ok) throw new Error(history.message || 'Gagal memuat riwayat.');
 
                 dom.historyBody.innerHTML = '';
-                if (history.length === 0) {
+                if (!history || history.length === 0) {
                     const message = Object.keys(searchParams).length > 0 ? 'Data tidak ditemukan.' : 'Belum ada riwayat.';
                     dom.historyBody.innerHTML = `<tr><td colspan="5" style="text-align:center;">${message}</td></tr>`;
                 } else {
-                    history.forEach(item => {
-                        const row = dom.historyBody.insertRow();
-                        const timestamp = new Date(item.created_at).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' });
-                        row.innerHTML = `
-                            <td>${item.do_number}</td>
-                            <td>${item.vendor_name}</td>
-                            <td>${item.item_name}</td>
-                            <td>${item.net_weight}</td>
-                            <td>${timestamp.replace('.',':')}</td>
+                    dom.historyBody.innerHTML = history.map(item => {
+                        const ts = new Date(item.created_at);
+                        const date = ts.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                        const time = ts.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+                        const timestamp = `${date} ${time}`;
+
+                        return `
+                            <tr>
+                                <td>${item.do_number || ''}</td>
+                                <td>${item.vendor_name || ''}</td>
+                                <td>${item.item_name || ''}</td>
+                                <td>${item.net_weight ?? ''}</td>
+                                <td>${timestamp}</td>
+                            </tr>
                         `;
-                    });
+                    }).join('');
                 }
             } catch (error) {
                 console.error('Error memuat riwayat:', error);
@@ -674,11 +701,19 @@
             try {
                 setAppStatus('Memuat data master...', 'var(--warning-color)');
                 const response = await fetch(`http://${window.location.hostname}:8080${endpoint}`);
-                if (!response.ok) throw new Error(`Gagal memuat data ${type}.`);
+
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    // Not JSON, assume session has expired and server sent login page.
+                    window.location.href = `http://${window.location.hostname}:8080/login.html`;
+                    return;
+                }
+
                 const data = await response.json();
+                if (!response.ok) throw new Error(data.message || `Gagal memuat data ${type}.`);
+
                 setAppStatus('');
 
-                // Populate table headers
                 const thead = dom.selectionModalTable.querySelector('thead');
                 thead.innerHTML = `<tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>`;
 
@@ -740,8 +775,15 @@
         async function loadSerialSettings() {
             try {
                 const response = await fetch(`http://${window.location.hostname}:8080/api/serial/settings`);
-                if (!response.ok) throw new Error('Gagal memuat pengaturan serial.');
+
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    window.location.href = `http://${window.location.hostname}:8080/login.html`;
+                    return;
+                }
+
                 const settings = await response.json();
+                if (!response.ok) throw new Error(settings.message || 'Gagal memuat pengaturan serial.');
 
                 dom.portPathSelect.innerHTML = '';
                 const availablePortPaths = new Set();
@@ -808,9 +850,16 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(settings),
                 });
+
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    window.location.href = `http://${window.location.hostname}:8080/login.html`;
+                    return;
+                }
+
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.message || 'Gagal menyimpan pengaturan.');
-                
+
                 setSettingsStatus(result.message, 'var(--success-color)');
                 // The server will now attempt to connect and send status via WebSocket
 
@@ -911,7 +960,7 @@
             try {
                 const response = await fetch(`http://${window.location.hostname}:8080/api/logout`, { method: 'POST' });
                 if (response.ok) {
-                    window.location.href = '/login.html';
+                    window.location.href = `http://${window.location.hostname}:8080/login.html`;
                 } else {
                     alert('Gagal logout.');
                 }

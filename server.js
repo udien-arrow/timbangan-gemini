@@ -11,9 +11,9 @@ const session = require('express-session');
 // --- Konfigurasi ---
 const WEB_SERVER_PORT = 8080;
 const DB_CONFIG = {
-  host: 'localhost',
-  user: 'root', // Ganti dengan user database Anda
-  password: '', // Ganti dengan password database Anda
+  host: '192.168.1.11',
+  user: 'apboots', // Ganti dengan user database Anda
+  password: 'apbootswgi858', // Ganti dengan password database Anda
   database: 'timbangan_db'
 };
 // --------------------

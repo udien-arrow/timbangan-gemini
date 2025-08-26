@@ -1,0 +1,12 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Tentukan base path dari proyek Anda jika berada di dalam subfolder htdocs
+    RewriteBase /github/timbangan-gemini/
+
+    # Arahkan semua request ke /api/login ke file api/login.php
+    RewriteRule ^api/login/?$ api/login.php [L,NC]
+
+    # Anda bisa menambahkan rule lain untuk endpoint API lainnya di sini
+    # Contoh: RewriteRule ^api/logout/?$ api/logout.php [L,NC]
+</IfModule>
