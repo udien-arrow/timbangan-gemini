@@ -77,12 +77,13 @@ function handleScaleData(data) {
     console.log(`Data diterima dari timbangan: "${rawData}"`);
 
     let processedData = rawData;
-    const match = rawData.match(/([+-]?\d+)(kg)/i);
+    // Regex diubah untuk menangani angka desimal (float/double)
+    const match = rawData.match(/([+-]?[\d.]+)(kg)/i);
 
     if (match) {
-        // Asumsi: "+0000270kg" berarti 270 gram.
-        const weightInGrams = parseInt(match[1], 10);
-        processedData = `${weightInGrams} KG`;
+        // Menggunakan parseFloat untuk menangani angka desimal seperti "0.5"
+        const weightValue = parseFloat(match[1]);
+        processedData = `${weightValue} Kg`;
     } else {
         console.warn(`Format data tidak dikenali, mengirim data mentah: "${rawData}"`);
     }
@@ -383,18 +384,18 @@ app.get('/api/transactions', async (req, res) => {
             params.push(endDate);
         }
 
+        // Jika tidak ada parameter pencarian sama sekali, default ke hari ini
+        if (!plateNumber && !startDate && !endDate) {
+            conditions.push('DATE(created_at) = CURDATE()');
+        }
+
         if (conditions.length > 0) {
             baseQuery += ' AND ' + conditions.join(' AND ');
         }
 
         baseQuery += ' ORDER BY created_at DESC';
 
-        // Batasi hasil hanya jika tidak ada parameter pencarian
-        if (params.length === 0) {
-            baseQuery += ' LIMIT 10';
-        } else {
-            baseQuery += ' LIMIT 100'; // Batasi hasil pencarian agar tidak terlalu besar
-        }
+        baseQuery += ' LIMIT 100'; // Batasi hasil pencarian agar tidak terlalu besar
 
         const [rows] = await dbPool.query(baseQuery, params);
         res.json(rows);

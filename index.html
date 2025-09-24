@@ -471,13 +471,28 @@
 
         let lastKnownWeight = 0;
 
+        // --- FUNGSI HELPERS ---
+        function formatWeight(number) {
+            if (isNaN(number) || number === null) {
+                return '';
+            }
+            return number.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+        }
+
+        function parseFormattedWeight(formattedString) {
+            if (!formattedString || typeof formattedString !== 'string') return 0;
+            // 1. Hapus semua karakter non-numerik kecuali koma (pemisah desimal)
+            const cleanedString = formattedString.replace(/[^\d,]/g, '').replace(',', '.');
+            return parseFloat(cleanedString) || 0;
+        }
+
         // --- FUNGSI UTAMA ---
 
         function updateCalculations() {
-            const w1 = parseInt(dom.weight1.value) || 0;
-            const w2 = parseInt(dom.weight2.value) || 0;
+            const w1 = parseFormattedWeight(dom.weight1.value);
+            const w2 = parseFormattedWeight(dom.weight2.value);
 
-            if (w1 === 0 && w2 === 0) {
+            if (w1 === 0 && w2 === 0) { // Hanya reset jika keduanya 0
                 dom.grossWeight.value = '';
                 dom.tareWeight.value = '';
                 dom.netWeight.value = '';
@@ -487,10 +502,10 @@
             const gross = Math.max(w1, w2);
             const tare = Math.min(w1, w2);
             const net = gross - tare;
-
-            dom.grossWeight.value = `${gross} KG`;
-            dom.tareWeight.value = `${tare} KG`;
-            dom.netWeight.value = `${net} KG`;
+            
+            dom.grossWeight.value = `${formatWeight(gross)} Kg`;
+            dom.tareWeight.value = `${formatWeight(tare)} Kg`;
+            dom.netWeight.value = `${formatWeight(net)} Kg`;
         }
 
         function resetForm() {
@@ -540,7 +555,7 @@
             dom.plateNumber.value = tx.plate_number;
             dom.vendorName.value = tx.vendor_name;
             dom.itemName.value = tx.item_name;
-            dom.weight1.value = `${tx.weight_1} KG`;
+            dom.weight1.value = `${formatWeight(tx.weight_1)} Kg`;
 
             // Lock the fields that are already filled
             [dom.doNumber, dom.plateNumber, dom.selectVendorBtn, dom.selectItemBtn, dom.capture1Btn].forEach(el => el.disabled = true);
@@ -549,10 +564,10 @@
         async function saveTransaction() {
             const transactionId = dom.transactionId.value;
             
-            if (transactionId) {
+            if (transactionId) { // Ini adalah Timbang 2 (Update)
                 // This is Timbang 2 (Update)
-                const w1 = parseInt(dom.weight1.value) || 0;
-                const w2 = parseInt(dom.weight2.value) || 0;
+                const w1 = parseFormattedWeight(dom.weight1.value);
+                const w2 = parseFormattedWeight(dom.weight2.value);
                 if (w2 === 0) {
                     alert('Silakan lakukan Timbang 2 terlebih dahulu.');
                     return;
@@ -561,12 +576,12 @@
                     weight_2: w2,
                     gross_weight: Math.max(w1, w2),
                     tare_weight: Math.min(w1, w2),
-                    net_weight: Math.abs(w1 - w2)
+                    net_weight: parseFloat(Math.abs(w1 - w2).toFixed(2))
                 };
                 await sendRequest(`/api/transactions/${transactionId}`, 'PUT', updateData);
             } else {
                 // This is Timbang 1 (Create)
-                const w1 = parseInt(dom.weight1.value) || 0;
+                const w1 = parseFormattedWeight(dom.weight1.value);
                 if (w1 === 0) {
                     alert('Silakan lakukan Timbang 1 terlebih dahulu.');
                     return;
@@ -648,7 +663,7 @@
                                 <td>${item.do_number || ''}</td>
                                 <td>${item.vendor_name || ''}</td>
                                 <td>${item.item_name || ''}</td>
-                                <td>${item.net_weight ?? ''}</td>
+                                <td>${formatWeight(item.net_weight)}</td>
                                 <td>${timestamp}</td>
                                 <td>
                                     <button class="btn btn-secondary" style="padding: 5px 10px;" onclick="window.open('cetak.html?id=${item.id}', '_blank')">Cetak Ulang</button>
@@ -892,8 +907,8 @@
                         case 'data':
                             const weightData = message.payload;
                             if (weightData) {
-                                dom.weightDisplay.textContent = weightData;
-                                lastKnownWeight = parseInt(weightData) || 0;
+                                dom.weightDisplay.textContent = `${formatWeight(parseFloat(weightData))} Kg`;
+                                lastKnownWeight = parseFloat(weightData) || 0;
                             }
                             break;
                     }
@@ -928,12 +943,12 @@
 
         // --- EVENT LISTENERS ---
         dom.capture1Btn.addEventListener('click', () => {
-            dom.weight1.value = `${lastKnownWeight} KG`;
+            dom.weight1.value = `${formatWeight(lastKnownWeight)} Kg`;
             updateCalculations();
         });
 
         dom.capture2Btn.addEventListener('click', () => {
-            dom.weight2.value = `${lastKnownWeight} KG`;
+            dom.weight2.value = `${formatWeight(lastKnownWeight)} Kg`;
             updateCalculations();
         });
 
@@ -990,11 +1005,19 @@
 
         // --- INISIALISASI ---
         function initializeApp() {
+            // Fungsi untuk mendapatkan tanggal hari ini dalam format YYYY-MM-DD
+            const getTodayString = () => {
+                const today = new Date();
+                return today.toISOString().split('T')[0];
+            };
+
             [dom.capture1Btn, dom.capture2Btn].forEach(btn => btn.disabled = true);
-            
+            // Set input tanggal ke hari ini secara default
+            dom.searchStartDate.value = getTodayString();
+            dom.searchEndDate.value = getTodayString();
             loadSerialSettings();
             connectWebSocket();
-            loadHistory();
+            loadHistory({ startDate: getTodayString(), endDate: getTodayString() });
         }
 
         initializeApp();

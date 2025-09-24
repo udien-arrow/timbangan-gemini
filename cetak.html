@@ -32,10 +32,10 @@
             <tr><td class="label">Waktu Masuk</td><td>: <span id="time_in"></span></td></tr>
             <tr><td class="label">Waktu Keluar</td><td>: <span id="time_out"></span></td></tr>
             <tr class="separator-row"><td colspan="2"></td></tr>
-            <tr><td class="label">Timbang 1 (Bruto)</td><td class="value"><span id="gross_weight"></span> KG</td></tr>
-            <tr><td class="label">Timbang 2 (Tare)</td><td class="value"><span id="tare_weight"></span> KG</td></tr>
+            <tr><td class="label">Timbang 1 (Bruto)</td><td class="value"><span id="gross_weight"></span> Kg</td></tr>
+            <tr><td class="label">Timbang 2 (Tare)</td><td class="value"><span id="tare_weight"></span> Kg</td></tr>
             <tr class="separator-row"><td colspan="2"></td></tr>
-            <tr class="total-row"><td class="label">NETTO</td><td class="value"><span id="net_weight"></span> KG</td></tr>
+            <tr class="total-row"><td class="label">NETTO</td><td class="value"><span id="net_weight"></span> Kg</td></tr>
         </table>
         <div class="footer">
             Terima kasih.
@@ -77,10 +77,15 @@
                 document.getElementById('plate_number').textContent = tx.plate_number;
                 document.getElementById('vendor_name').textContent = tx.vendor_name;
                 document.getElementById('item_name').textContent = tx.item_name;
-                
-                document.getElementById('gross_weight').textContent = tx.gross_weight.toLocaleString('id-ID');
-                document.getElementById('tare_weight').textContent = tx.tare_weight.toLocaleString('id-ID');
-                document.getElementById('net_weight').textContent = tx.net_weight.toLocaleString('id-ID');
+
+                // Fungsi format yang sama dengan di halaman utama
+                const formatWeight = (number) => {
+                    if (isNaN(number) || number === null) return '';
+                    return number.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+                };
+                document.getElementById('gross_weight').textContent = formatWeight(tx.gross_weight);
+                document.getElementById('tare_weight').textContent = formatWeight(tx.tare_weight);
+                document.getElementById('net_weight').textContent = formatWeight(tx.net_weight);
 
                 // Format tanggal dan waktu agar mudah dibaca
                 const options = { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' };
