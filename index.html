@@ -481,8 +481,10 @@
 
         function parseFormattedWeight(formattedString) {
             if (!formattedString || typeof formattedString !== 'string') return 0;
-            // 1. Hapus semua karakter non-numerik kecuali koma (pemisah desimal)
-            const cleanedString = formattedString.replace(/[^\d,]/g, '').replace(',', '.');
+            // 1. Hapus semua karakter selain angka, titik, dan koma.
+            // 2. Ganti koma dengan titik untuk standarisasi.
+            // 3. Hapus semua titik kecuali yang terakhir (untuk menangani pemisah ribuan).
+            const cleanedString = formattedString.replace(/[^\d,.]/g, '').replace(/,/g, '.').replace(/\.(?=.*\.)/g, '');
             return parseFloat(cleanedString) || 0;
         }
 
