@@ -82,7 +82,7 @@ function handleScaleData(data) {
     if (match) {
         // Asumsi: "+0000270kg" berarti 270 gram.
         const weightInGrams = parseInt(match[1], 10);
-        processedData = `${weightInGrams} g`;
+        processedData = `${weightInGrams} KG`;
     } else {
         console.warn(`Format data tidak dikenali, mengirim data mentah: "${rawData}"`);
     }
@@ -362,7 +362,7 @@ app.get('/api/transactions', async (req, res) => {
         const { plateNumber, startDate, endDate } = req.query;
 
         let baseQuery = `
-            SELECT do_number, vendor_name, item_name, net_weight, created_at FROM transactions 
+            SELECT id, do_number, vendor_name, item_name, net_weight, created_at FROM transactions 
             WHERE status = 'completed'
         `;
         const params = [];

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aplikasi Timbangan Profesional</title>
+    <title>Aplikasi Timbangan AP BOOTS</title>
     <style>
         :root {
             --primary-color: #0056b3;
@@ -387,8 +387,9 @@
                             <th>No. Surat Jalan</th>
                             <th>Vendor</th>
                             <th>Barang</th>
-                            <th>Netto (g)</th>
+                            <th>Netto (Kg)</th>
                             <th>Waktu</th>
+                            <th style="width: 120px;">Aksi</th>
                         </tr>
                     </thead>
                     <tbody id="history-body">
@@ -487,9 +488,9 @@
             const tare = Math.min(w1, w2);
             const net = gross - tare;
 
-            dom.grossWeight.value = `${gross} g`;
-            dom.tareWeight.value = `${tare} g`;
-            dom.netWeight.value = `${net} g`;
+            dom.grossWeight.value = `${gross} KG`;
+            dom.tareWeight.value = `${tare} KG`;
+            dom.netWeight.value = `${net} KG`;
         }
 
         function resetForm() {
@@ -539,7 +540,7 @@
             dom.plateNumber.value = tx.plate_number;
             dom.vendorName.value = tx.vendor_name;
             dom.itemName.value = tx.item_name;
-            dom.weight1.value = `${tx.weight_1} g`;
+            dom.weight1.value = `${tx.weight_1} KG`;
 
             // Lock the fields that are already filled
             [dom.doNumber, dom.plateNumber, dom.selectVendorBtn, dom.selectItemBtn, dom.capture1Btn].forEach(el => el.disabled = true);
@@ -634,7 +635,7 @@
                 dom.historyBody.innerHTML = '';
                 if (!history || history.length === 0) {
                     const message = Object.keys(searchParams).length > 0 ? 'Data tidak ditemukan.' : 'Belum ada riwayat.';
-                    dom.historyBody.innerHTML = `<tr><td colspan="5" style="text-align:center;">${message}</td></tr>`;
+                    dom.historyBody.innerHTML = `<tr><td colspan="6" style="text-align:center;">${message}</td></tr>`;
                 } else {
                     dom.historyBody.innerHTML = history.map(item => {
                         const ts = new Date(item.created_at);
@@ -649,13 +650,16 @@
                                 <td>${item.item_name || ''}</td>
                                 <td>${item.net_weight ?? ''}</td>
                                 <td>${timestamp}</td>
+                                <td>
+                                    <button class="btn btn-secondary" style="padding: 5px 10px;" onclick="window.open('cetak.html?id=${item.id}', '_blank')">Cetak Ulang</button>
+                                </td>
                             </tr>
                         `;
                     }).join('');
                 }
             } catch (error) {
                 console.error('Error memuat riwayat:', error);
-                dom.historyBody.innerHTML = `<tr><td colspan="5" style="text-align:center;">Error: ${error.message}</td></tr>`;
+                dom.historyBody.innerHTML = `<tr><td colspan="6" style="text-align:center;">Error: ${error.message}</td></tr>`;
             }
         }
 
@@ -924,12 +928,12 @@
 
         // --- EVENT LISTENERS ---
         dom.capture1Btn.addEventListener('click', () => {
-            dom.weight1.value = `${lastKnownWeight} g`;
+            dom.weight1.value = `${lastKnownWeight} KG`;
             updateCalculations();
         });
 
         dom.capture2Btn.addEventListener('click', () => {
-            dom.weight2.value = `${lastKnownWeight} g`;
+            dom.weight2.value = `${lastKnownWeight} KG`;
             updateCalculations();
         });
 
