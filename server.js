@@ -296,6 +296,7 @@ app.post('/api/transactions', async (req, res) => {
         plate_number,
         do_number,
         weight_1,
+        weight_1_manual,
     } = req.body;
 
     // Validasi sederhana untuk Timbang 1
@@ -312,10 +313,10 @@ app.post('/api/transactions', async (req, res) => {
 
         // Langkah 2: Jika tidak ada, lanjutkan menyimpan data.
         const query = `
-            INSERT INTO transactions (vendor_name, item_name, plate_number, do_number, weight_1, status) 
-            VALUES (?, ?, ?, ?, ?, 'pending')
+            INSERT INTO transactions (vendor_name, item_name, plate_number, do_number, weight_1, weight_1_manual, status) 
+            VALUES (?, ?, ?, ?, ?, ?, 'pending')
         `;
-        const values = [vendor_name, item_name, plate_number, do_number, weight_1];
+        const values = [vendor_name, item_name, plate_number, do_number, weight_1, !!weight_1_manual];
         await dbPool.query(query, values);
         res.status(201).json({ message: 'Data Timbang 1 berhasil disimpan.' });
     } catch (error) {
@@ -333,6 +334,7 @@ app.put('/api/transactions/:id', async (req, res) => {
     const { id } = req.params;
     const {
         weight_2,
+        weight_2_manual,
         gross_weight,
         tare_weight,
         net_weight
@@ -344,11 +346,11 @@ app.put('/api/transactions/:id', async (req, res) => {
 
     try {
         const query = `
-            UPDATE transactions SET
-            weight_2 = ?, gross_weight = ?, tare_weight = ?, net_weight = ?, status = 'completed'
+            UPDATE transactions SET 
+            weight_2 = ?, weight_2_manual = ?, gross_weight = ?, tare_weight = ?, net_weight = ?, status = 'completed'
             WHERE id = ?
         `;
-        const values = [weight_2, gross_weight, tare_weight, net_weight, id];
+        const values = [weight_2, !!weight_2_manual, gross_weight, tare_weight, net_weight, id];
         await dbPool.query(query, values);
         res.json({ message: 'Transaksi berhasil diselesaikan.', id: parseInt(id, 10) });
     } catch (error) {

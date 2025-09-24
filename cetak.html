@@ -34,8 +34,8 @@
             <tr><td class="label">Waktu Masuk</td><td>: <span id="time_in"></span></td></tr>
             <tr><td class="label">Waktu Keluar</td><td>: <span id="time_out"></span></td></tr>
             <tr class="separator-row"><td colspan="2"></td></tr>
-            <tr><td class="label">Timbang 1</td><td class="value"><span id="weight_1"></span> Kg</td></tr>
-            <tr><td class="label">Timbang 2</td><td class="value"><span id="weight_2"></span> Kg</td></tr>
+            <tr><td class="label">Timbang 1</td><td class="value"><span id="weight_1"></span> <span id="weight_1_manual_indicator"></span> Kg</td></tr>
+            <tr><td class="label">Timbang 2</td><td class="value"><span id="weight_2"></span> <span id="weight_2_manual_indicator"></span> Kg</td></tr>
             <tr class="separator-row"><td colspan="2"></td></tr>
             <tr><td class="label">Bruto</td><td class="value"><span id="gross_weight"></span> Kg</td></tr>
             <tr><td class="label">Tare</td><td class="value"><span id="tare_weight"></span> Kg</td></tr>
@@ -88,8 +88,11 @@
                     if (isNaN(number) || number === null) return '';
                     return number.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
                 };
-                document.getElementById('weight_1').textContent = formatWeight(tx.weight_1);
-                document.getElementById('weight_2').textContent = formatWeight(tx.weight_2);
+                document.getElementById('weight_1').textContent = formatWeight(tx.weight_1)
+                document.getElementById('weight_2').textContent = formatWeight(tx.weight_2)
+
+                document.getElementById('weight_1_manual_indicator').textContent = tx.weight_1_manual ? '(M)' : '';
+                document.getElementById('weight_2_manual_indicator').textContent = tx.weight_2_manual ? '(M)' : '';
 
                 document.getElementById('gross_weight').textContent = formatWeight(tx.gross_weight);
                 document.getElementById('tare_weight').textContent = formatWeight(tx.tare_weight);

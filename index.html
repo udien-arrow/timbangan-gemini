@@ -255,7 +255,7 @@
     <div class="main-container">
         <div class="left-panel">
             <h2>Timbangan Real-Time</h2>
-            <div id="weight-display">0 g</div>
+            <div id="weight-display">0 Kg</div>
             <div id="status">Status: <span class="disconnected">Terputus</span></div>
             <hr style="width:100%; margin: 20px 0; border-color: var(--border-color);">
             <button id="logout-btn" class="btn btn-danger" style="width: 100%; margin-bottom: 10px;">Logout</button>
@@ -331,14 +331,14 @@
                     <label>Timbang 1</label>
                     <div class="weigh-group">
                         <input type="text" id="weight_1" readonly>
-                        <button id="capture-weight-1-btn" class="btn btn-primary">Ambil</button>
+                        <button id="capture1Btn" class="btn btn-primary">Ambil</button>
                     </div>
                 </div>
                 <div class="form-group">
                     <label>Timbang 2</label>
                     <div class="weigh-group">
                         <input type="text" id="weight_2" readonly>
-                        <button id="capture-weight-2-btn" class="btn btn-primary">Ambil</button>
+                        <button id="capture2Btn" class="btn btn-primary">Ambil</button>
                     </div>
                 </div>
                 <div class="form-group">
@@ -438,8 +438,8 @@
             grossWeight: document.getElementById('gross_weight'),
             tareWeight: document.getElementById('tare_weight'),
             netWeight: document.getElementById('net_weight'),
-            capture1Btn: document.getElementById('capture-weight-1-btn'),
-            capture2Btn: document.getElementById('capture-weight-2-btn'),
+            capture1Btn: document.getElementById('capture1Btn'),
+            capture2Btn: document.getElementById('capture2Btn'),
             saveBtn: document.getElementById('save-transaction-btn'),
             resetBtn: document.getElementById('reset-form-btn'),
             logoutBtn: document.getElementById('logout-btn'),
@@ -470,6 +470,8 @@
         dom.transactionId.type = 'hidden';
 
         let lastKnownWeight = 0;
+        let isConnected = false;
+        let weight1IsManual = false, weight2IsManual = false;
 
         // --- FUNGSI HELPERS ---
         function formatWeight(number) {
@@ -517,6 +519,8 @@
                 'transactionId'
             ];
             fields.forEach(field => dom[field].value = '');
+            weight1IsManual = false;
+            weight2IsManual = false;
             // Re-enable all fields and buttons
             [dom.doNumber, dom.plateNumber, dom.selectVendorBtn, dom.selectItemBtn, dom.capture1Btn].forEach(el => el.disabled = false);
             setAppStatus('');
@@ -558,6 +562,8 @@
             dom.vendorName.value = tx.vendor_name;
             dom.itemName.value = tx.item_name;
             dom.weight1.value = `${formatWeight(tx.weight_1)} Kg`;
+            // Asumsikan data dari DB tidak manual, kecuali DB punya flag ini
+            weight1IsManual = tx.weight_1_manual || false; 
 
             // Lock the fields that are already filled
             [dom.doNumber, dom.plateNumber, dom.selectVendorBtn, dom.selectItemBtn, dom.capture1Btn].forEach(el => el.disabled = true);
@@ -576,6 +582,7 @@
                 }
                 const updateData = {
                     weight_2: w2,
+                    weight_2_manual: weight2IsManual,
                     gross_weight: Math.max(w1, w2),
                     tare_weight: Math.min(w1, w2),
                     net_weight: parseFloat(Math.abs(w1 - w2).toFixed(2))
@@ -593,7 +600,8 @@
                     plate_number: dom.plateNumber.value.trim(),
                     vendor_name: dom.vendorName.value.trim(),
                     item_name: dom.itemName.value.trim(),
-                    weight_1: w1
+                    weight_1: w1,
+                    weight_1_manual: weight1IsManual
                 };
                  for (const key in createData) {
                     if (!createData[key]) {
@@ -931,28 +939,67 @@
         }
 
         function updateConnectionStatus(status, message) {
+            isConnected = (status === 'connected');
             dom.statusSpan.textContent = message || status;
-            if (status === 'connected') {
+
+            if (isConnected) {
                 dom.statusSpan.className = 'connected';
-                [dom.capture1Btn, dom.capture2Btn].forEach(btn => btn.disabled = false);
+                dom.capture1Btn.textContent = 'Ambil';
+                dom.capture2Btn.textContent = 'Ambil';
+                // Hanya enable jika tidak dalam mode Timbang 2
+                if (!dom.transactionId.value) {
+                    dom.capture1Btn.disabled = false;
+                }
+                dom.capture2Btn.disabled = false;
             } else {
                 dom.statusSpan.className = 'disconnected';
-                [dom.capture1Btn, dom.capture2Btn].forEach(btn => btn.disabled = true);
-                dom.weightDisplay.textContent = '0 g';
+                dom.capture1Btn.textContent = 'Input Manual';
+                dom.capture2Btn.textContent = 'Input Manual';
+                // Selalu aktifkan tombol untuk input manual
+                if (!dom.transactionId.value) {
+                    dom.capture1Btn.disabled = false;
+                }
+                dom.capture2Btn.disabled = false;
+                dom.weightDisplay.textContent = '0 Kg';
                 lastKnownWeight = 0;
             }
         }
 
         // --- EVENT LISTENERS ---
-        dom.capture1Btn.addEventListener('click', () => {
-            dom.weight1.value = `${formatWeight(lastKnownWeight)} Kg`;
-            updateCalculations();
-        });
+        dom.capture1Btn.addEventListener('click', () => { handleCapture(1); });
+        dom.capture2Btn.addEventListener('click', () => { handleCapture(2); });
 
-        dom.capture2Btn.addEventListener('click', () => {
-            dom.weight2.value = `${formatWeight(lastKnownWeight)} Kg`;
-            updateCalculations();
-        });
+        function handleCapture(weighNumber) {
+            if (isConnected) {
+                const weight = lastKnownWeight;
+                if (weighNumber === 1) {
+                    dom.weight1.value = `${formatWeight(weight)} Kg`;
+                    weight1IsManual = false;
+                } else {
+                    dom.weight2.value = `${formatWeight(weight)} Kg`;
+                    weight2IsManual = false;
+                }
+                updateCalculations();
+            } else {
+                // Mode Input Manual
+                const manualWeight = prompt(`Koneksi timbangan bermasalah.\nMasukkan berat untuk Timbang ${weighNumber} (Kg):`, '0');
+                if (manualWeight !== null) { // User tidak menekan cancel
+                    const weight = parseFloat(manualWeight.replace(',', '.'));
+                    if (!isNaN(weight)) {
+                        if (weighNumber === 1) {
+                            dom.weight1.value = `${formatWeight(weight)} Kg`;
+                            weight1IsManual = true;
+                        } else {
+                            dom.weight2.value = `${formatWeight(weight)} Kg`;
+                            weight2IsManual = true;
+                        }
+                        updateCalculations();
+                    } else {
+                        alert('Input tidak valid. Harap masukkan angka.');
+                    }
+                }
+            }
+        }
 
         dom.searchBtn.addEventListener('click', () => {
             const params = {};
